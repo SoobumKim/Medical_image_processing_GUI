@@ -28,18 +28,18 @@ import hit_or_miss1
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1350, 750)
+        MainWindow.resize(800, 430)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         # 두개의 graphicsView를 사용
         self.graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
-        self.graphicsView.setGeometry(QtCore.QRect(50, 80, 580, 580))
+        self.graphicsView.setGeometry(QtCore.QRect(50, 80, 260, 260))
         self.graphicsView.setObjectName("graphicsView")
         self.graphicsView_2 = QtWidgets.QGraphicsView(self.centralwidget)
-        self.graphicsView_2.setGeometry(QtCore.QRect(650, 80, 580, 580))
+        self.graphicsView_2.setGeometry(QtCore.QRect(400, 80, 260, 260))
         self.graphicsView_2.setObjectName("graphicsView_2")
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(280, 40, 171, 31))
+        self.label.setGeometry(QtCore.QRect(130, 40, 181, 31))
         #폰트와 크기 조정
         font = QtGui.QFont()
         font.setPointSize(22)
@@ -48,24 +48,23 @@ class Ui_MainWindow(object):
         self.label.setFont(font)
         self.label.setObjectName("label")
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(900, 40, 181, 31))
+        self.label_2.setGeometry(QtCore.QRect(500, 40, 181, 31))
         font = QtGui.QFont()
         font.setPointSize(22)
         font.setBold(True)
         font.setWeight(75)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
-        self.label_3 = QtWidgets.QLabel(self.centralwidget)
-        self.label_3.setGeometry(QtCore.QRect(1420, 345, 40, 20))
+
         #up, down, reset 버튼 사용
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(1250, 260, 61, 28))
+        self.pushButton.setGeometry(QtCore.QRect(700, 190, 61, 28))
         self.pushButton.setObjectName("pushButton")
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(1250, 310, 61, 28))
+        self.pushButton_2.setGeometry(QtCore.QRect(700, 240, 61, 28))
         self.pushButton_2.setObjectName("pushButton_2")
         self.pushButton_10 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_10.setGeometry(QtCore.QRect(610, 10, 61, 28))
+        self.pushButton_10.setGeometry(QtCore.QRect(700, 140, 61, 28))
         self.pushButton_10.setObjectName("pushButton_10")
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -243,7 +242,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         #각자의 이름 설정
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "MR DICOM GUI_soobum"))
         self.label.setText(_translate("MainWindow", "Before"))
         self.label_2.setText(_translate("MainWindow", "After"))
         self.pushButton.setText(_translate("MainWindow", "Up"))
@@ -292,7 +291,7 @@ class Ui_MainWindow(object):
 
     def open_trigger(self):
         #Directory를 받아서 폴더자체를 가져오게 한다. 3D array
-        fileDic = QFileDialog.getExistingDirectory(MainWindow, "Open a folder", "/home", QFileDialog.ShowDirsOnly)
+        fileDic = QFileDialog.getExistingDirectory(MainWindow, "Open a folder", "./", QFileDialog.ShowDirsOnly)
         #sitk = SimpleITK
         reader = sitk.ImageSeriesReader()
         dicom_names = reader.GetGDCMSeriesFileNames(fileDic)
@@ -304,8 +303,12 @@ class Ui_MainWindow(object):
         #밑에 나오는 사이즈를 공통적으로 사용하기 위해  x, y, z를 self를 붙혀서 사용한다.
         (self.z, self.y, self.x) = self.darray.shape
 
+        # nomalization
+        for i in range(self.darray.shape[0]):
+            self.darray[i] = (self.darray[i]-np.min(self.darray[i]))/(np.max(self.darray[i])-np.min(self.darray[i]))*255
+        print(self.darray)
         darray_max = np.amax(self.darray)
-        #nomalization
+
         pixel_value = (self.darray / darray_max) * 255
 
         self.i = 0
@@ -486,8 +489,14 @@ class Ui_MainWindow(object):
 
     def log_transformation_click(self):
         array_max = np.max(self.darray)
+
+        print("--------------")
+        #print(self.darray)
+        print(np.min(self.darray))
+        print(np.max(self.darray))
+        print("--------------")
         # performing the log transformation
-        self.pixel_value = (255.0 * np.log(1 + self.darray)) / np.log(1 + array_max)
+        self.pixel_value = (255.0 * np.log(1 + self.darray)) / (np.log(1 + array_max) + 1e-8)
 
         self.view()
 

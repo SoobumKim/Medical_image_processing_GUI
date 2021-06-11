@@ -123,8 +123,6 @@ class Ui_MainWindow(object):
         self.otsu_method.setObjectName("otsu_method")
         self.renyi_entropy = QtWidgets.QAction(MainWindow)
         self.renyi_entropy.setObjectName("renyi_entropy")
-        self.adaptive_thresholding = QtWidgets.QAction(MainWindow)
-        self.adaptive_thresholding.setObjectName("adaptive_thresholding")
         self.watershed_segmentation = QtWidgets.QAction(MainWindow)
         self.watershed_segmentation.setObjectName("watershed_segmentation")
         self.dilation = QtWidgets.QAction(MainWindow)
@@ -181,7 +179,6 @@ class Ui_MainWindow(object):
         self.menuFile_4.addAction(self.Bandpass_Filter)
         self.menuFile_5.addAction(self.otsu_method)
         self.menuFile_5.addAction(self.renyi_entropy)
-        self.menuFile_5.addAction(self.adaptive_thresholding)
         self.menuFile_5.addAction(self.watershed_segmentation)
         self.menuFile_6.addAction(self.dilation)
         self.menuFile_6.addAction(self.erosion)
@@ -225,7 +222,6 @@ class Ui_MainWindow(object):
         self.Bandpass_Filter.triggered.connect(self.bandpass_click)
         self.otsu_method.triggered.connect(self.otsu_click)
         self.renyi_entropy.triggered.connect(self.renyi_click)
-        self.adaptive_thresholding.triggered.connect(self.adaptive_click)
         self.watershed_segmentation.triggered.connect(self.watershed_click)
         self.dilation.triggered.connect(self.dilation_click)
         self.erosion.triggered.connect(self.erosion_click)
@@ -279,7 +275,6 @@ class Ui_MainWindow(object):
         self.Bandpass_Filter.setText(_translate("MainWindow", "Bandpass Filter"))
         self.otsu_method.setText(_translate("MainWindow", "Otsu Method"))
         self.renyi_entropy.setText(_translate("MainWindow", "Renyi Entropy"))
-        self.adaptive_thresholding.setText(_translate("MainWindow", "Adaptive Thresholding"))
         self.watershed_segmentation.setText(_translate("MainWindow", "Watershed Segmentation"))
         self.dilation.setText(_translate("MainWindow", "Dilation"))
         self.erosion.setText(_translate("MainWindow", "Erosion"))
@@ -304,9 +299,6 @@ class Ui_MainWindow(object):
         (self.z, self.y, self.x) = self.darray.shape
 
         # nomalization
-        for i in range(self.darray.shape[0]):
-            self.darray[i] = (self.darray[i]-np.min(self.darray[i]))/(np.max(self.darray[i])-np.min(self.darray[i]))*255
-        print(self.darray)
         darray_max = np.amax(self.darray)
 
         pixel_value = (self.darray / darray_max) * 255
@@ -476,11 +468,10 @@ class Ui_MainWindow(object):
 
         gammavalue, r = QInputDialog.getDouble(MainWindow, "Get Gamma", "Value:", 0, 0, 100)
 
-        self.darray = self.darray + 1
-
-        array_max = np.max(self.darray)
-        nomalize = self.darray / array_max
-        e = np.log(nomalize) * gammavalue
+        darr = self.darray.copy()
+        for i in range(self.darray.shape[0]):
+            darr[i] = (self.darray[i] - np.min(self.darray[i])) / (np.max(self.darray[i]) - np.min(self.darray[i])) * 255
+        e = np.log(darr) * gammavalue
         self.pixel_value = np.exp(e) * 255
 
         self.view()
@@ -489,14 +480,11 @@ class Ui_MainWindow(object):
 
     def log_transformation_click(self):
         array_max = np.max(self.darray)
-
-        print("--------------")
-        #print(self.darray)
-        print(np.min(self.darray))
-        print(np.max(self.darray))
-        print("--------------")
+        darr = self.darray.copy()
+        for i in range(self.darray.shape[0]):
+            darr[i] = (self.darray[i]-np.min(self.darray[i]))/(np.max(self.darray[i])-np.min(self.darray[i]))*255
         # performing the log transformation
-        self.pixel_value = (255.0 * np.log(1 + self.darray)) / (np.log(1 + array_max) + 1e-8)
+        self.pixel_value = (255.0 * np.log(1 + darr)) / (np.log(1 + array_max) + 1e-8)
 
         self.view()
 
@@ -834,20 +822,6 @@ class Ui_MainWindow(object):
         print(thresh)
         bool_image = self.darray > thresh
         self.pixel_value = bool_image * 255
-        self.view()
-
-
-
-    def adaptive_click(self):
-
-        array = np.zeros((self.z,self.y,self.x))
-
-        for i in range(0, self.z):
-            darray_slice = self.darray[i, :, :]
-            thre_image = filters.threshold_adaptive(darray_slice, 15, method='gaussian', offset=5)
-            array[i, :, :] = array[i, :, :] + thre_image
-
-        self.pixel_value = array * 255
         self.view()
 
     def watershed_click(self):
